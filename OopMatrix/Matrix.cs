@@ -5,10 +5,12 @@ namespace OopMatrix
     class Matrix
     {
         #region Приватные поля
+
         // приватные поля
         private double[,] matrix;
         private int rows;
         private int cols;
+
         #endregion
         #region Геттеры и сеттеры
         // геттеры, сеттеры
@@ -61,9 +63,9 @@ namespace OopMatrix
         {
             this.rows = other.rows;
             this.cols = other.cols;
-            for(int i = 0;i < rows; i++)
+            for (int i = 0; i < rows; i++)
             {
-                for(int j = 0;j < cols; j++)
+                for (int j = 0; j < cols; j++)
                 {
                     this[i, j] = other[i, j];
                 }
@@ -79,22 +81,22 @@ namespace OopMatrix
         }
         public static Matrix operator +(Matrix one, Matrix two)
         {
-            if(one.rows != two.rows &&
+            if (one.rows != two.rows &&
                one.cols != two.cols)
             {
                 throw new ArgumentException();
             }
             Matrix res = new Matrix(one.rows, two.cols);
-            for(int i = 0;i < one.rows; i++)
+            for (int i = 0; i < one.rows; i++)
             {
-                for(int j = 0;j < two.cols; j++)
+                for (int j = 0; j < two.cols; j++)
                 {
                     res[i, j] = one[i, j] + two[i, j];
                 }
             }
             return res;
         }
-        
+
         public static Matrix operator -(Matrix one, Matrix two)
         {
             if (one.rows != two.rows &&
@@ -112,7 +114,7 @@ namespace OopMatrix
             }
             return res;
         }
-        public static bool operator !=(Matrix one, Matrix two) 
+        public static bool operator !=(Matrix one, Matrix two)
         {
             if (one.rows != two.rows &&
                one.cols != two.cols)
@@ -123,7 +125,7 @@ namespace OopMatrix
             {
                 for (int j = 0; j < two.cols; j++)
                 {
-                    if(one[i, j] != two[i, j])
+                    if (one[i, j] != two[i, j])
                     {
                         return true;
                     }
@@ -181,71 +183,75 @@ namespace OopMatrix
         public Matrix Transpose()
         {
             Matrix TransposeMatrix = new Matrix(cols, rows);
-            for(int i = 0;i < rows; i++)
+            for (int i = 0; i < rows; i++)
             {
-                for(int j = 0;j < cols; j++)
+                for (int j = 0; j < cols; j++)
                 {
                     TransposeMatrix[j, i] = matrix[i, j];
                 }
             }
             return TransposeMatrix;
         }
+        public Matrix Transpose(Matrix matr)
+        {
+            Matrix TransposeMatrix = new Matrix(matr.cols, matr.rows);
+            for (int i = 0; i < matr.rows; i++)
+            {
+                for (int j = 0; j < matr.cols; j++)
+                {
+                    TransposeMatrix[j, i] = matr[i, j];
+                }
+            }
+            return TransposeMatrix;
+        }
         #endregion
         #region Нахождение обратной матрицы
-        public Matrix Inverse(Matrix mA, uint round = 0)
+        public double Determinant(Matrix matr)
         {
-            if (mA.rows != mA.cols) throw new ArgumentException("Обратная матрица существует только для квадратных, невырожденных, матриц.");
-            Matrix matrix = new Matrix(mA.rows);
-            double determinant = Determinant(mA);
+            if (!IsSquare(matr))
+                throw new NoSquareException();
+            if(matr.IfSquareThenGetSize() == 1)
+                return matrix[0, 0];
 
-            if (determinant == 0) return matrix; //Если определитель == 0 - матрица вырожденная
-
-            for (int i = 0; i < mA.rows; i++)
+            if (matr.IfSquareThenGetSize() == 2)
+                return (matr[0, 0] * matr[1, 1]) - (matr[0, 1] * matr[1, 0]);
+            double sum = 0.0;
+            for(int i = 0;i < matr.cols; i++)
             {
-                for (int t = 0; t < mA.cols; t++)
+                sum += ChangeSign(i) * matr[0, i] * Determinant(CreateSubMatrix(matr, 0, i));
+            }
+            return sum;
+
+        }
+        public Matrix Cofactor(Matrix matr)
+        {
+            if (!IsSquare(matr))
+                throw new NoSquareException();
+            Matrix mat = new Matrix(matr.rows, matr.cols);
+            for(int i = 0;i < matr.rows; i++)
+            {
+                for(int j = 0;j < matr.cols; j++)
                 {
-                    Matrix tmp = mA.Exclude(i, t);
-                    matrix[t, i] = round == 0 ? 
-                        (1 / determinant) * Determinant(tmp) : 
-                        Math.Round(((1 / determinant) * Determinant(tmp)), (int)round, MidpointRounding.ToEven);
+                    mat[i, j] = ChangeSign(i) * ChangeSign(j) 
+                        * Determinant(CreateSubMatrix(matr, i, j));
                 }
             }
-            return matrix;
+            return mat;
         }
-        public double Determinant(Matrix mA)
+        public Matrix Inverse(Matrix matr)
         {
-            if (mA.rows != mA.cols) throw new ArgumentException("Вычисление определителя возможно только для квадратных матриц.");
-            Matrix matrix = mA.Clone();
-            double det = 1;
-            int order = mA.rows;
-
-            for (int i = 0; i < order - 1; i++)
-            {
-                double[] masterRow = matrix.GetRow(i);
-                det *= masterRow[i];
-                if (det == 0) return 0;
-                for (int t = i + 1; t < order; t++)
-                {
-                    double[] slaveRow = matrix.GetRow(t);
-                    double[] tmp = MulArrayConst(masterRow, slaveRow[i] / masterRow[i]);
-                    double[] source = matrix.GetRow(t);
-                    matrix.SetRow(SubArray(source, tmp), t);
-                }
-            }
-            det *= matrix[order - 1, order - 1];
-
-            return det;
+            if (!IsSquare(matr))
+                throw new NoSquareException();
+            return (Transpose(Cofactor(matr)).MultiplyByConstant(1.0 / Determinant(matr)));
         }
-
-
         #endregion
         #region Вывод и заполнение матрицы
         // вывод матрицы
         public void Print()
         {
-            for(int i = 0;i < rows; i++)
+            for (int i = 0; i < rows; i++)
             {
-                for(int j = 0;j < cols; j++)
+                for (int j = 0; j < cols; j++)
                 {
                     Console.Write(matrix[i, j] + "\t");
                 }
@@ -266,63 +272,61 @@ namespace OopMatrix
         }
         #endregion
         #region Вспомогательные функции
-        public Matrix Exclude(int row, int column)
+        private void SetValueAt(int row, int col, double value)
         {
-            if (row > rows || column > cols) throw new IndexOutOfRangeException("Строка или столбец не принадлежат матрице.");
-            Matrix ret = new Matrix(rows - 1, cols - 1);
-            int offsetX = 0;
-            for (int i = 0; i < rows; i++)
-            {
-                int offsetY = 0;
-                if (i == row) { offsetX++; continue; }
-                for (int t = 0; t < cols; t++)
-                {
-                    if (t == column) { offsetY++; continue; }
-                    ret[i - offsetX, t - offsetY] = this[i, t];
-                }
-            }
-            return ret;
+            matrix[row, col] = value;
         }
-        public Matrix Clone()
+        private bool IsSquare()
         {
-            Matrix clone = new Matrix(rows, cols);
+            return rows == cols;
+        }
+        private bool IsSquare(Matrix matr)
+        {
+            return matr.rows == matr.cols;
+        }
+            
+        private Matrix MultiplyByConstant(double constant)
+        {
+            Matrix MultipliedMatrix = new Matrix(rows, cols);
             for(int i = 0;i < rows; i++)
             {
                 for(int j = 0;j < cols; j++)
                 {
-                    clone[i, j] = matrix[i, j];
+                    MultipliedMatrix[i, j] *= constant;
                 }
             }
-            return clone;
+            return MultipliedMatrix;
         }
-        public double[] GetRow(int row)
+        private Matrix CreateSubMatrix(Matrix matr, int ExcludingRow, int ExcludingCol)
         {
-            if (row >= rows) throw new IndexOutOfRangeException("Индекс строки не принадлежит массиву.");
-            double[] ret = new double[cols];
-            for (int i = 0; i < cols; i++)
-                ret[i] = matrix[row, i];
-
-            return ret;
+            Matrix SubMatrix = new Matrix(rows - 1, cols - 1);
+            int row = -1;
+            for(int i = 0;i < rows; i++)
+            {
+                if (i == ExcludingRow)
+                    continue;
+                row++;
+                int col = -1;
+                for(int j = 0;j < cols; j++)
+                {
+                    if (j == ExcludingCol)
+                        continue;
+                    SubMatrix[row, ++col] = matr[i, j];
+                }
+            }
+            return SubMatrix;
         }
-        public static double[] MulArrayConst(double[] array, double number)
+        private int ChangeSign(int index)
         {
-            double[] ret = (double[])array.Clone();
-            for (int i = 0; i < ret.Length; i++)
-                ret[i] *= number;
-            return ret;
+            if (index % 2 == 0)
+                return 1;
+            return -1;
         }
-        public void SetRow(double[] rowValues, int row)
+        private int IfSquareThenGetSize()
         {
-            if (row >= rows) throw new IndexOutOfRangeException("Индекс строки не принадлежит массиву.");
-            for (int i = 0; i < (cols > rowValues.Length ? rowValues.Length : cols); i++)
-                matrix[row, i] = rowValues[i];
-        }
-        public double[] SubArray(double[] A, double[] B)
-        {
-            double[] ret = (double[])A.Clone();
-            for (int i = 0; i < (A.Length > B.Length ? A.Length : B.Length); i++)
-                ret[i] -= B[i];
-            return ret;
+            if (!IsSquare())
+                throw new NoSquareException();
+            return IsSquare() ? rows : -1; 
         }
         #endregion
     }

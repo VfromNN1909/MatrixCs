@@ -30,13 +30,15 @@ namespace OopMatrix
             matrix3.Print();
             Console.WriteLine();
 
-            Matrix matrix4 = new Matrix(2, 2);
+            Matrix matrix4 = new Matrix(3, 3);
             matrix4.RandomFill(-10, 10);
             matrix4.Print();
             Console.WriteLine();
-            matrix4.Inverse(matrix4);
+
+            matrix4 = matrix4.Inverse(matrix4);
             matrix4.Print();
             Console.WriteLine();
+
         }
     }
 }
